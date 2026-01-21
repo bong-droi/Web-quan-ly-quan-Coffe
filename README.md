@@ -61,17 +61,4 @@ Dự án được phát triển theo mô hình **Client – Server**, áp dụng
 ## 4. Kiến trúc hệ thống
 Hệ thống được xây dựng theo kiến trúc **MVT (Model – View – Template)** của Django:
 
-- **Model**: Định nghĩa cấu trúc dữ liệu, ánh xạ cơ sở dữ liệu thông qua Django ORM và xử lý nghiệp vụ.
-- **View**: Tiếp nhận request từ người dùng, xử lý logic nghiệp vụ và trả về response tương ứng.
-- **Template**: Xây dựng giao diện người dùng bằng HTML, CSS và JavaScript.
-
-Kiến trúc MVT giúp hệ thống có cấu trúc rõ ràng, dễ bảo trì, dễ mở rộng và phù hợp với các ứng dụng web quy mô vừa và lớn.
-
----
-
-## 5. Hướng dẫn cài đặt & chạy hệ thống
-
-### 🔹 Bước 1: Clone project
-```bash
-git clone https://github.com/bong-droi/Quan-ly-quan-coffee-toan-dien.git
-cd Quan-ly-quan-coffee-toan-dien
+- **Model**: Định nghĩa cấu trúc dữ quan-ly-quan-coffee-toan-dien
