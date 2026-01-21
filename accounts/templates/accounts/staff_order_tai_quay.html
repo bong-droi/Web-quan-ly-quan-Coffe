@@ -1,0 +1,480 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Order tại quầy | Nhân viên</title>
+  <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'menu/css/menu.css' %}">
+  <style>
+  /* Mở rộng vùng nội dung choán gần hết màn hình */
+  .dash-main{
+    max-width: none;
+    margin: 0;
+    padding: 24px 40px 40px;
+  }
+
+  .wrap{margin:0}
+  .grid{
+    display:grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+    gap:24px;
+  }
+  .card{
+    background:#fff;
+    border:1px solid rgba(0,0,0,.05);
+    border-radius:22px;
+    box-shadow:0 18px 50px rgba(0,0,0,.12);
+  }
+  .card h2{
+    margin:0;
+    padding:18px 22px;
+    border-bottom:1px solid #f0eee9;
+    font-size:20px;
+  }
+  .card .content{padding:18px 22px}
+
+  .toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:16px;
+    align-items:center;
+  }
+  .toolbar select{
+    padding:10px 12px;
+    border:1px solid #e6e2dc;
+    border-radius:12px;
+    min-width:160px;
+    background:#fff;
+  }
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid #f0eee9;padding:10px;text-align:left}
+  .right{text-align:right}
+  .muted{color:#777}
+  .btn{
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid #d6d3d1;
+    background:#111;
+    color:#fff;
+    cursor:pointer;
+  }
+  .ghost{
+    background:#fff7ee;
+    color:#2a160f;
+    border-color:#e6e2dc;
+  }
+  .card .pic{
+    width:100%;
+    height:160px;
+    border-radius:16px;
+    overflow:hidden;
+    background:#faf7f2;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .card .pic img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .tabs{display:flex;gap:8px;margin:0 0 12px}
+  .tab{
+    padding:8px 14px;
+    border:1px solid #e6e2dc;
+    border-radius:10px;
+    background:#fff7ee;
+    cursor:pointer;
+  }
+  .tab.active{
+    background: linear-gradient(180deg, #d3925d, #b96b33);
+    color:#2a160f;
+  }
+
+  /* Modal message */
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+  }
+  .modal{
+    background:#fff;
+    border-radius:16px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+    width:min(420px,92vw);
+    padding:18px;
+    border:1px solid rgba(0,0,0,.06);
+  }
+  .modal h3{margin:0 0 6px}
+  .modal p{margin:0 0 14px;color:#444}
+  .modal .row{display:flex;gap:10px;justify-content:flex-end}
+  </style>
+</head>
+<body>
+  <!-- Header lớn “Dashboard Nhân viên / Đăng xuất” lấy từ layout chung, KHÔNG thêm logo phụ ở đây -->
+
+  <main class="dash-main">
+    <div class="wrap">
+      <div class="grid">
+        <!-- Cột chọn món -->
+        <div class="card">
+          <h2>Chọn món</h2>
+          <div class="content">
+            <div class="toolbar">
+<span>Số bàn:</span>
+              <select id="tableSelect">
+                <option value="">Chọn số bàn</option>
+                <option>Bàn 1</option>
+                <option>Bàn 2</option>
+                <option>Bàn 3</option>
+              </select>
+            </div>
+
+            <div class="grid" style="grid-template-columns: repeat(3, minmax(0,1fr));gap:14px">
+              {% for it in items %}
+              <div class="card" style="border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.08)">
+                <div class="content">
+                  <div class="pic">
+                    {% if it.image %}
+                      <img src="{{ it.image.url }}" alt="{{ it.name }}">
+                    {% else %}
+                      <span class="muted">☕</span>
+                    {% endif %}
+                  </div>
+                  <div class="title" style="margin-top:10px;font-weight:600">{{ it.name }}</div>
+                  <div class="muted" style="font-size:13px">
+                    {% if it.category %}{{ it.category.name }}{% else %}Không phân loại{% endif %}
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+                    <span style="font-weight:600">{{ it.price|floatformat:0 }}đ</span>
+                    <button class="btn ghost add-btn" type="button"
+                            data-id="{{ it.id }}"
+                            data-name="{{ it.name|escapejs }}"
+                            data-price="{{ it.price|floatformat:0 }}">
+                      Thêm
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <div class="muted">Chưa có món nào.</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Cột giỏ hàng / đơn đã tạo -->
+        <div class="card">
+          <div class="content">
+            <div class="tabs">
+              <button class="tab active" id="tabCart" onclick="showPanel('cart')">Giỏ hàng</button>
+              <button class="tab" id="tabMy" onclick="showPanel('my')">Đơn đã tạo</button>
+            </div>
+
+            <div id="panelCart">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Món</th>
+                    <th class="right">SL</th>
+                    <th class="right">Đơn giá</th>
+                    <th class="right">Thành tiền</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="cartBody">
+                  <tr><td colspan="5" class="muted">Chưa có món.</td></tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" class="right"><b>Tổng</b></td>
+                    <td class="right" id="totalCell">0</td>
+                    <td></td>
+                  </tr>
+</tfoot>
+              </table>
+
+              <div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end">
+                <button class="btn ghost" type="button" onclick="clearCart()">Xóa giỏ</button>
+                <button id="placeBtn" class="btn" type="button" onclick="placeOrder()">Đặt hàng</button>
+                <button class="btn ghost" type="button" onclick="cancelOrderPrompt()">Hủy đơn</button>
+              </div>
+            </div>
+
+            <div id="panelMy" style="display:none">
+              <div id="myOrderBox" class="muted">Chưa có đơn nào.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal thông báo -->
+  <div id="msgOverlay" class="modal-overlay">
+    <div class="modal">
+      <h3 id="msgTitle">Thông báo</h3>
+      <p id="msgText">Nội dung</p>
+      <div class="row">
+        <button class="btn" type="button" onclick="hideMsg()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  var cart = [];
+
+  function addItem(name, price, id){
+    var ex = cart.find(function(i){ return i.name===name; });
+    if(ex){ ex.qty += 1; }
+    else { cart.push({ id:id, name:name, price:price, qty:1 }); }
+    renderCart();
+  }
+  function removeItem(name){
+    cart = cart.filter(function(i){ return i.name!==name; });
+    renderCart();
+  }
+  function changeQty(name, delta){
+    var it = cart.find(function(i){ return i.name===name; });
+    if(!it) return;
+    it.qty = Math.max(1, it.qty + delta);
+    renderCart();
+  }
+  function clearCart(){ cart = []; renderCart(); }
+  function money(n){ return new Intl.NumberFormat('vi-VN').format(n) + 'đ'; }
+
+  function renderCart(){
+    var body = document.getElementById('cartBody');
+    var btn = document.getElementById('placeBtn');
+    if(cart.length===0){
+      body.innerHTML = '<tr><td colspan="5" class="muted">Chưa có món.</td></tr>';
+      document.getElementById('totalCell').innerText='0';
+      if(btn){ btn.style.display = 'none'; }
+      return;
+    }
+    var html = '';
+    var total = 0;
+    cart.forEach(function(i){
+      var line = i.price * i.qty; total += line;
+      html += '<tr>'+
+        '<td>'+i.name+'</td>'+
+        '<td class="right">'+
+          '<button class="ghost" style="padding:2px 8px" onclick="changeQty(\''+i.name+'\', -1)">-</button> '+i.qty+' '+
+          '<button class="ghost" style="padding:2px 8px" onclick="changeQty(\''+i.name+'\', 1)">+</button>'+
+        '</td>'+
+        '<td class="right">'+money(i.price)+'</td>'+
+        '<td class="right">'+money(line)+'</td>'+
+        '<td><button class="ghost" onclick="removeItem(\''+i.name+'\')">Xóa</button></td>'+
+      '</tr>';
+    });
+    body.innerHTML = html;
+    document.getElementById('totalCell').innerText = money(total);
+    if(btn){ btn.style.display = ''; }
+  }
+
+  function showMsg(title, text){
+    document.getElementById('msgTitle').innerText = title || 'Thông báo';
+document.getElementById('msgText').innerText = text || '';
+    document.getElementById('msgOverlay').style.display = 'flex';
+  }
+  function hideMsg(){ document.getElementById('msgOverlay').style.display = 'none'; }
+
+  function placeOrder(){
+    if(cart.length===0){
+      showMsg('Thiếu thông tin', 'Vui lòng chọn ít nhất 1 món.');
+      return;
+    }
+
+    var t = document.getElementById('tableSelect').value.trim();
+    if(!t){
+      showMsg('Thiếu số bàn', 'Vui lòng chọn số bàn trước khi đặt.');
+      return;
+    }
+
+    var csrfToken = (document.cookie.match(/csrftoken=([^;]+)/)||[])[1];
+    var payload = {
+      order_type: 'offline',
+      table_number: t,
+      phone_number: '',
+      delivery_address: '',
+      items: cart.map(function(i){ return { menu_item_id: i.id, qty: i.qty }; })
+    };
+
+    fetch('{% url "create_order_from_customer" %}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+      body: JSON.stringify(payload)
+    }).then(function(r){ return r.json(); }).then(function(res){
+      if(res && res.ok){
+        showMsg('Thành công', 'Đặt hàng thành công ✓');
+        clearCart();
+        window.latestOrderId = res.order_id;
+      } else {
+        showMsg('Không thể đặt hàng', (res && res.error ? res.error : 'Lỗi không xác định'));
+      }
+    }).catch(function(e){
+      showMsg('Lỗi kết nối', String(e));
+    });
+  }
+
+  function cancelOrderPrompt(){
+    if(!window.latestOrderId){
+      showMsg('Chưa có đơn', 'Bạn chưa tạo đơn nào để hủy.');
+      return;
+    }
+    var reason = prompt('Nhập lý do hủy đơn:');
+    if(reason===null){ return; }
+    reason = String(reason||'').trim();
+    if(!reason){
+      showMsg('Thiếu lý do', 'Vui lòng nhập lý do hủy.');
+      return;
+    }
+    var csrfToken = (document.cookie.match(/csrftoken=([^;]+)/)||[])[1];
+    fetch('/orders/api/'+window.latestOrderId+'/cancel/', {
+      method:'POST',
+      headers:{ 'X-CSRFToken': csrfToken, 'Content-Type':'application/x-www-form-urlencoded' },
+      body: 'reason='+encodeURIComponent(reason)
+    }).then(function(r){ return r.json(); }).then(function(res){
+      if(res && res.ok){
+        showMsg('Đã hủy', 'Đơn đã được hủy.');
+      } else {
+        showMsg('Không thể hủy', (res && res.error ? res.error : 'Lỗi không xác định'));
+      }
+    }).catch(function(e){
+      showMsg('Lỗi kết nối', String(e));
+    });
+  }
+
+  // nút Thêm món
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.classList.contains('add-btn')){
+      var id = parseInt(e.target.getAttribute('data-id'));
+      var name = e.target.getAttribute('data-name');
+      var price = parseFloat(e.target.getAttribute('data-price'));
+      addItem(name, price, id);
+    }
+  });
+
+  function showPanel(which){
+    var cartP = document.getElementById('panelCart');
+    var myP = document.getElementById('panelMy');
+var tabCart = document.getElementById('tabCart');
+    var tabMy = document.getElementById('tabMy');
+    if(which==='my'){
+      cartP.style.display='none';
+      myP.style.display='block';
+      tabCart.classList.remove('active');
+      tabMy.classList.add('active');
+      loadMyOrder();
+    } else {
+      cartP.style.display='block';
+      myP.style.display='none';
+      tabMy.classList.remove('active');
+      tabCart.classList.add('active');
+    }
+  }
+
+  function loadMyOrder(){
+  fetch('/orders/api/my/').then(function(r){return r.json()}).then(function(res){
+    var box = document.getElementById('myOrderBox');
+    if(!(res && res.ok)){ 
+      box.innerText='Không tải được danh sách đơn.'; 
+      return; 
+    }
+
+    var orders = res.orders || [];
+    if(orders.length===0){ 
+      box.innerText='Chưa có đơn nào.'; 
+      return; 
+    }
+
+    var totalOrders = orders.length;   // tổng số đơn để đánh số 1..N
+    var html = '';
+
+    orders.forEach(function(o, index){
+      // 🔥 ĐƠN SỐ THỨ TỰ: đơn đầu tiên tạo = #1, đơn sau = #2...
+      var stt = totalOrders - index;
+
+      html += '<div style="border:1px solid #f0eee9;border-radius:12px;padding:10px;margin-bottom:10px;background:#fff">';
+      html += '<div><b>Đơn #'+ stt +'</b> - '+(o.order_type==='online'?'Online':'Offline')+' - '+o.created_at+'</div>';
+      html += '<div class="muted">'+ (o.order_type==='online'
+        ? ('Địa chỉ: '+(o.delivery_address||'-')+' | SĐT: '+(o.phone_number||'-'))
+        : ('Bàn: '+(o.table_number||'-'))) +'</div>';
+
+      html += '<table style="width:100%;border-collapse:collapse;margin-top:8px">'+
+              '<thead><tr><th>Món</th><th class="right">SL</th><th class="right">Đơn giá</th><th class="right">Thành tiền</th></tr></thead><tbody>';
+
+      var total = 0;
+      (o.items||[]).forEach(function(i){
+        var qty   = i.qty || 1;
+        var price = parseFloat(i.price);
+        var line  = parseFloat(i.line);
+
+        if (isNaN(price)) price = 0;
+        if (isNaN(line))  line  = price * qty;
+
+        total += line;
+
+        html += '<tr>'+
+                  '<td>'+i.name+'</td>'+
+                  '<td class="right">'+qty+'</td>'+
+                  '<td class="right">'+ money(price) +'</td>'+
+                  '<td class="right">'+ money(line)  +'</td>'+
+                '</tr>';
+      });
+
+      html += '</tbody><tfoot><tr>'+
+                '<td colspan="3" class="right"><b>Tổng</b></td>'+
+                '<td class="right">'+ money(total) +'</td>'+
+              '</tr></tfoot></table>';
+
+      if(o.status!=='processed' && o.status!=='canceled'){
+        html += '<div style="margin-top:10px;text-align:right">'+
+                  '<button class="btn ghost" type="button" onclick="cancelOrderPromptFor('+o.id+')">Hủy đơn</button>'+
+                '</div>';
+      }
+      if(o.status==='canceled'){
+html += '<div class="muted" style="margin-top:6px">Đã hủy: '+(o.cancel_reason||'-')+'</div>';
+      }
+      html += '</div>';
+    });
+
+    box.innerHTML = html;
+  }).catch(function(){
+    document.getElementById('myOrderBox').innerText='Không tải được danh sách đơn.';
+  });
+}
+
+  function cancelOrderPromptFor(id){
+    var reason = prompt('Nhập lý do hủy đơn:');
+    if(reason===null){ return; }
+    reason = String(reason||'').trim();
+    if(!reason){
+      showMsg('Thiếu lý do', 'Vui lòng nhập lý do hủy.');
+      return;
+    }
+    var csrfToken = (document.cookie.match(/csrftoken=([^;]+)/)||[])[1];
+    fetch('/orders/api/'+id+'/cancel/', {
+      method:'POST',
+      headers:{ 'X-CSRFToken': csrfToken, 'Content-Type':'application/x-www-form-urlencoded' },
+      body: 'reason='+encodeURIComponent(reason)
+    }).then(function(r){ return r.json() }).then(function(res){
+      if(res && res.ok){
+        loadMyOrder();
+      } else {
+        showMsg('Không thể hủy', (res && res.error ? res.error : 'Lỗi không xác định'));
+      }
+    }).catch(function(e){
+      showMsg('Lỗi kết nối', String(e));
+    });
+  }
+  </script>
+</body>
+</html>

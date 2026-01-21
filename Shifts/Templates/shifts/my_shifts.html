@@ -1,0 +1,117 @@
+{% load static %}
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>Lịch làm việc của tôi</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/login.css' %}">
+    <style>
+        /* Copy CSS từ my_registrations.html */
+        /* ... cùng CSS ... */
+    </style>
+</head>
+<body class="page">
+    <div class="card">
+        <!-- Header -->
+        <div class="brand">
+            <svg class="logo" viewBox="0 0 64 64">
+                <path d="M10 22h36v10a14 14 0 0 1-14 14H24A14 14 0 0 1 10 32z" fill="currentColor"/>
+            </svg>
+            <div class="brand-text">
+                <h1>🗓️ Lịch làm việc của tôi</h1>
+                <p>Xem lịch làm việc đã được phân công</p>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <a href="{% url 'shifts:shift_register' %}" class="tab">
+                📝 Đăng ký ca mới
+            </a>
+            <a href="{% url 'shifts:my_registrations' %}" class="tab">
+                📋 Ca đã đăng ký
+            </a>
+            <a href="{% url 'shifts:my_shifts' %}" class="tab active">
+                🗓️ Lịch làm việc
+            </a>
+        </div>
+        
+        <!-- Nội dung -->
+        <div style="text-align: center;">
+            <h3 style="color: #5D4037; margin: 30px 0;">Lịch làm việc tháng {{ month }}/{{ year }}</h3>
+            
+            {% if assigned_shifts %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Tên ca</th>
+                            <th>Thời gian</th>
+                            <th>Số giờ</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shift in assigned_shifts %}
+                        <tr>
+                            <td><strong>{{ shift.date|date:"d/m/Y" }}</strong></td>
+                            <td>{{ shift.shift.name }}</td>
+                            <td>{{ shift.shift.start_time|time:"H:i" }} - {{ shift.shift.end_time|time:"H:i" }}</td>
+                            <td>{{ shift.shift.get_duration_hours }} giờ</td>
+                            <td>
+                                {% if shift.date < today %}
+                                <span class="status-badge status-past">Đã hoàn thành</span>
+                                {% elif shift.date == today %}
+                                <span class="status-badge status-assigned">Hôm nay</span>
+                                {% else %}
+                                <span class="status-badge status-assigned">Sắp tới</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Thống kê -->
+            <div style="margin-top: 30px; padding: 20px; background: #FFF8F0; border-radius: 10px;">
+                <h4 style="color: #5D4037; margin-bottom: 15px;">📊 Thống kê tháng {{ month }}/{{ year }}</h4>
+                <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 32px; color: #8B4513; font-weight: bold;">{{ total_shifts }}</div>
+                        <div style="color: #666;">Tổng số ca</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 32px; color: #2E7D32; font-weight: bold;">{{ total_hours }}</div>
+                        <div style="color: #666;">Tổng giờ làm</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 32px; color: #1565C0; font-weight: bold;">
+                            {% if total_hours > 0 %}
+                                {{ total_hours|floatformat:1 }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </div>
+                        <div style="color: #666;">Giờ làm trung bình/ca</div>
+                    </div>
+                </div>
+            </div>
+            
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📅</div>
+                <h3>Chưa có lịch làm việc</h3>
+                <p>Bạn chưa được phân công ca làm việc nào trong tháng {{ month }}/{{ year }}</p>
+                <a href="{% url 'shifts:shift_register' %}" class="btn btn-primary" style="margin-top: 20px;">
+                    📝 Đăng ký ca ngay
+                </a>
+            </div>
+            {% endif %}
+            
+           
+        </div>
+    </div>
+</body>
+</html>
